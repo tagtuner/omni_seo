@@ -429,12 +429,35 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         if (isLiveMode) {
-            // Check if selected campaign is already running or queued
+            // Check if selected campaign is already running or queued or monitoring
             const existingCamp = selectedCampaignId ? campaignsList.find(c => String(c.id) === String(selectedCampaignId)) : null;
-            if (existingCamp && (existingCamp.status === 'running' || existingCamp.status === 'queued')) {
-                addTerminalLog(`[SYSTEM] Re-connecting to active campaign (ID: ${selectedCampaignId})...`, 'terminal-system-msg');
-                connectCampaignStream(selectedCampaignId);
-                return;
+            if (existingCamp) {
+                if (existingCamp.status === 'running' || existingCamp.status === 'queued' || existingCamp.status === 'monitoring') {
+                    addTerminalLog(`[SYSTEM] Re-connecting to active campaign (ID: ${selectedCampaignId})...`, 'terminal-system-msg');
+                    connectCampaignStream(selectedCampaignId);
+                    return;
+                } else if (existingCamp.status === 'paused' || existingCamp.status === 'completed' || existingCamp.status === 'failed') {
+                    addTerminalLog(`[SYSTEM] Re-engaging campaign (ID: ${selectedCampaignId})...`, 'terminal-system-msg');
+                    fetch(`/api/campaigns/${selectedCampaignId}/resume`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            fetchCampaigns();
+                            connectCampaignStream(selectedCampaignId);
+                        } else {
+                            addTerminalLog(`[SYSTEM] Failed to re-engage campaign: ${data.message}`, 'terminal-error-msg');
+                            stopBot();
+                        }
+                    })
+                    .catch(err => {
+                        addTerminalLog(`[SYSTEM] Connection error: ${err.message}`, 'terminal-error-msg');
+                        stopBot();
+                    });
+                    return;
+                }
             }
 
             addTerminalLog(`[SYSTEM] Live Autopilot sequence initiated. Connecting backend...`, 'terminal-system-msg');
@@ -498,7 +521,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (selectedCampaignId && !String(selectedCampaignId).startsWith('sim_') && isLiveMode) {
             // Dynamic status sync on pause
-            fetchCampaigns();
+            fetch(`/api/campaigns/${selectedCampaignId}/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'paused' })
+            }).then(() => fetchCampaigns());
         } else if (String(selectedCampaignId).startsWith('sim_')) {
             const item = campaignsList.find(c => c.id === selectedCampaignId);
             if (item) {
@@ -868,15 +895,15 @@ document.addEventListener('DOMContentLoaded', () => {
             envModeBadge.className = "environment-badge live";
             envModeBadge.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> <span>LIVE RUN ACTIVE</span>`;
             
-            if (camp.status === 'running') {
+            if (camp.status === 'running' || camp.status === 'monitoring') {
                 botRunning = true;
                 botToggle.checked = true;
                 botPulse.className = "status-indicator running";
-                botStatusText.textContent = "BOT ENGAGED";
-                engageStatusLabel.textContent = "BOT ACTIVE";
+                botStatusText.textContent = camp.status === 'monitoring' ? "SEO MONITORING" : "BOT ENGAGED";
+                engageStatusLabel.textContent = camp.status === 'monitoring' ? "BOT MONITORING" : "BOT ACTIVE";
                 engageStatusLabel.style.color = "var(--neon-green)";
                 liveIndicator.className = "terminal-badge pulse-green";
-                liveIndicator.textContent = "RUNNING";
+                liveIndicator.textContent = camp.status === 'monitoring' ? "MONITORING" : "RUNNING";
             } else {
                 botRunning = false;
                 botToggle.checked = false;
@@ -974,6 +1001,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 addTerminalLog(data.message, data.class || 'terminal-info-msg');
             }
             
+            if (data.status === 'monitoring') {
+                addTerminalLog("[SYSTEM] Campaign transitioned to active SEO monitoring state.", "terminal-success-msg");
+                botRunning = true;
+                botToggle.checked = true;
+                botPulse.className = "status-indicator running";
+                botStatusText.textContent = "SEO MONITORING";
+                engageStatusLabel.textContent = "BOT MONITORING";
+                engageStatusLabel.style.color = "var(--neon-green)";
+                liveIndicator.className = "terminal-badge pulse-green";
+                liveIndicator.textContent = "MONITORING";
+                fetchCampaigns();
+            }
+            
+            if (data.status === 'paused') {
+                addTerminalLog("[SYSTEM] SEO monitoring paused by user.", "terminal-warning-msg");
+                eventSource.close();
+                eventSource = null;
+                botRunning = false;
+                botToggle.checked = false;
+                botPulse.className = "status-indicator idle";
+                botStatusText.textContent = "SYSTEM STANDBY";
+                engageStatusLabel.textContent = "ENGAGE BOT";
+                engageStatusLabel.style.color = "var(--text-secondary)";
+                liveIndicator.className = "terminal-badge pulse-red";
+                liveIndicator.textContent = "STANDBY";
+                fetchCampaigns();
+            }
+
+            if (data.status === 'failed') {
+                addTerminalLog("[SYSTEM] Campaign execution failed.", "terminal-error-msg");
+                eventSource.close();
+                eventSource = null;
+                botRunning = false;
+                botToggle.checked = false;
+                botPulse.className = "status-indicator idle";
+                botStatusText.textContent = "SYSTEM FAILED";
+                engageStatusLabel.textContent = "ENGAGE BOT";
+                engageStatusLabel.style.color = "var(--text-secondary)";
+                liveIndicator.className = "terminal-badge pulse-red";
+                liveIndicator.textContent = "STANDBY";
+                fetchCampaigns();
+            }
+
             if (data.status === 'completed') {
                 addTerminalLog("[SYSTEM] Live campaign tasks completed successfully.", "terminal-success-msg");
                 eventSource.close();
