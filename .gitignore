@@ -1,0 +1,40 @@
+# Python virtual environment
+venv/
+.venv/
+env/
+ENV/
+bin/
+lib/
+include/
+pip-selfcheck.json
+
+# Cache directories
+__pycache__/
+*.py[cod]
+*$py.class
+
+# App Databases and logs
+*.db
+*.sqlite
+*.sqlite3
+campaigns.db
+backend/campaigns.db
+
+# Dynamic campaign workspaces and caches
+workspace/
+backend/workspace/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# IDE & Editor configs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
+Thumbs.db

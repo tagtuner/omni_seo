@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniSEO Command Center — AI SEO Autopilot</title>
+    <meta name="description" content="Autonomous AI Agentic SEO Control Panel. Deploy bots, manage search indexation, analyze keyword gaps, and automate organic rankings in real-time.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=2026060201">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar-nav">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-compass-drafting"></i>
+                </div>
+                <div class="logo-text">
+                    <h2>OmniSEO</h2>
+                    <span>CTO Core Division</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="#" class="nav-link active" id="nav-dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                <a href="#" class="nav-link" id="nav-credentials"><i class="fa-solid fa-server"></i> Hosting Config</a>
+                <a href="#" class="nav-link" id="nav-competitors"><i class="fa-solid fa-user-ninja"></i> Competitor Intel</a>
+                <a href="#" class="nav-link" id="nav-logs"><i class="fa-solid fa-terminal"></i> Bot Live Feed</a>
+            </nav>
+            <div class="sidebar-header-divider"></div>
+            <div class="sidebar-section-title"><i class="fa-solid fa-layer-group"></i> SEO Campaigns</div>
+            <div class="campaign-list-container">
+                <button type="button" class="btn-new-campaign" id="btn-new-campaign">
+                    <i class="fa-solid fa-plus"></i> New Campaign
+                </button>
+                <div class="campaign-list" id="campaign-list-wrapper">
+                    <!-- Dynamic campaign list items populate here -->
+                </div>
+            </div>
+            <div class="bot-status-card">
+                <div class="status-indicator idle" id="bot-pulse"></div>
+                <div class="status-info">
+                    <p class="status-label">Active Campaign</p>
+                    <p class="status-value" id="bot-status-text">SYSTEM STANDBY</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Area -->
+        <main class="main-content">
+            <!-- Top Header & Global Status -->
+            <header class="top-header" id="main-header">
+                <div class="header-title">
+                    <h1>SEO Agentic Command Center</h1>
+                    <p>Orchestrate autonomous search optimization and organic indexing campaigns</p>
+                </div>
+                
+                <!-- Timeframe & Campaign Controls -->
+                <div class="global-controls">
+                    <div class="environment-badge simulation" id="env-mode-badge">
+                        <i class="fa-solid fa-flask"></i>
+                        <span>SIMULATION MODE</span>
+                    </div>
+                    <div class="backlinks-counter-badge" id="backlinks-counter-badge">
+                        <i class="fa-solid fa-link"></i>
+                        <span id="backlinks-count-text">0 Backlinks Built</span>
+                    </div>
+                    <div class="campaign-timeline-badge">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <span id="timeline-badge-text">90-Day Campaign</span>
+                    </div>
+                    <div class="engage-container">
+                        <span class="engage-label" id="engage-status-label">ENGAGE BOT</span>
+                        <label class="switch" for="bot-engage-toggle">
+                            <input type="checkbox" id="bot-engage-toggle" aria-label="Engage SEO Bot Autopilot">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Grid Dashboard (Bento Layout) -->
+            <div class="bento-grid">
+                
+                <!-- Module 1: Campaign Target & Keywords Configuration -->
+                <section class="card bento-wide" id="config-module">
+                    <div class="card-header">
+                        <div class="header-icon"><i class="fa-solid fa-sliders"></i></div>
+                        <h2>Campaign Targets & Parameters</h2>
+                        <span class="tech-stack-badge" id="tech-stack-badge"><i class="fa-solid fa-microchip"></i> Stack: Unknown</span>
+                    </div>
+                    <div class="card-body grid-2-col">
+                        <div class="input-group-wrapper">
+                            <div class="form-group">
+                                <label for="target-domain"><i class="fa-solid fa-globe"></i> Target Domain URL</label>
+                                <input type="text" id="target-domain" placeholder="e.g. https://omnicalc.com" value="https://omnicalc.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="target-keyword"><i class="fa-solid fa-magnifying-glass-dollar"></i> Primary Keyword Goal</label>
+                                <input type="text" id="target-keyword" placeholder="e.g. self employed tax calculator 2026" value="self employed tax calculator 2026" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="campaign-duration"><i class="fa-solid fa-clock-rotate-left"></i> Campaign Duration: <span id="duration-val" class="highlight-text">3 Months</span></label>
+                                <input type="range" id="campaign-duration" min="1" max="6" value="3" step="1" aria-label="Campaign Duration Selection">
+                                <div class="slider-labels">
+                                    <span>1m</span>
+                                    <span>2m</span>
+                                    <span>3m</span>
+                                    <span>4m</span>
+                                    <span>5m</span>
+                                    <span>6m</span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group checkbox-wrapper">
+                                <label class="checkbox-container" for="audit-only-toggle">
+                                    <input type="checkbox" id="audit-only-toggle" aria-label="Run Diagnostic Audit and Keyword Gap Analysis Only">
+                                    <span class="custom-checkbox"></span>
+                                    <span class="checkbox-label"><i class="fa-solid fa-magnifying-glass-chart"></i> Run Audit & Keyword Gap Check Only</span>
+                                </label>
+                            </div>
+                            
+                            <!-- Live AI Artifact Output Preview -->
+                            <div class="preview-panel-container">
+                                <div class="preview-header">
+                                    <div class="preview-title">
+                                        <i class="fa-solid fa-laptop-code"></i> Live AI Generated Calculator (Preview)
+                                    </div>
+                                    <div class="preview-tabs">
+                                        <button type="button" class="preview-tab active" id="tab-btn-render"><i class="fa-solid fa-eye"></i> Rendered View</button>
+                                        <button type="button" class="preview-tab" id="tab-btn-code"><i class="fa-solid fa-code"></i> Source Code</button>
+                                    </div>
+                                </div>
+                                <div class="preview-content">
+                                    <div class="preview-pane active" id="pane-render">
+                                        <iframe id="live-render-frame" sandbox="allow-scripts" title="AI Generated Page Preview" srcdoc="&lt;div style='color:#94a3b8; font-family:sans-serif; text-align:center; padding:40px; font-size:0.9rem;'&gt;AI generated calculator will render here live during campaign execution.&lt;/div&gt;"></iframe>
+                                    </div>
+                                    <div class="preview-pane" id="pane-code">
+                                        <pre><code id="live-code-view">&lt;!-- Code will be streamed here live... --&gt;</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="input-group-wrapper">
+                            <div class="form-group">
+                                <label for="bot-prompt"><i class="fa-solid fa-wand-magic-sparkles"></i> Custom AI Bot Instructions</label>
+                                <textarea id="bot-prompt" placeholder="Give the bot specific business goals, styling limits, content tone, or directories to target... (e.g. Focus heavily on gig-workers, write with a professional but easy tone, and embed our backlink widgets naturally.)">Focus heavily on gig-economy freelancers, write with an authoritative but simple financial tone, build a glowing Obsidian Dark tax calculator interface, and embed our currency widgets naturally to earn backlinks.</textarea>
+                            </div>
+                            
+                            <!-- Live Bot Telemetry Console inside the config card -->
+                            <div class="console-panel-container" id="console-module">
+                                <div class="console-header">
+                                    <div class="console-title">
+                                        <i class="fa-solid fa-terminal"></i> SEO Bot Live Action Feed
+                                    </div>
+                                    <span class="terminal-badge pulse-red" id="live-indicator">STANDBY</span>
+                                </div>
+                                <div class="console-body terminal-body">
+                                    <div class="terminal-window" id="terminal-log-output" aria-live="polite">
+                                        <span class="terminal-system-msg">[SYSTEM INITIATED] OmniSEO Autopilot v1.0.0 is online.</span>
+                                        <span class="terminal-system-msg">Press the "ENGAGE BOT" switch at the top right to start the autonomous campaign.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Module 2: Secure Hosting Integration panel -->
+                <section class="card" id="hosting-module">
+                    <div class="card-header">
+                        <div class="header-icon"><i class="fa-solid fa-key"></i></div>
+                        <h2>Hosting & API Credentials</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-subtitle">Enables the bot to dynamically deploy calculators, edit sitemaps, crawl competitors, and call LLM APIs.</p>
+                        
+                        <!-- Hosting Access Group -->
+                        <h3 class="subsection-title"><i class="fa-solid fa-server"></i> Server Integration Access</h3>
+                        <div class="form-group">
+                            <label for="host-protocol"><i class="fa-solid fa-network-wired"></i> Connection Protocol</label>
+                            <select id="host-protocol">
+                                <option value="sftp" selected>SFTP (Secure Shell / Port 22)</option>
+                                <option value="ftp">FTP (Standard File Transfer / Port 21)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="host-ip">Server Host / IP Address</label>
+                            <input type="text" id="host-ip" placeholder="e.g. 172.30.3.206" value="172.30.3.206">
+                        </div>
+                        <div class="grid-2-col-compact">
+                            <div class="form-group">
+                                <label for="host-user">Hosting Username</label>
+                                <input type="text" id="host-user" placeholder="root" value="root">
+                            </div>
+                            <div class="form-group">
+                                <label for="host-port">Port</label>
+                                <input type="number" id="host-port" placeholder="22" value="22">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="host-pass">SFTP Password or Private Key</label>
+                            <input type="password" id="host-pass" placeholder="••••••••••••••" value="passwordless-ssh-active">
+                        </div>
+                        <div class="credential-check">
+                            <button type="button" class="btn btn-secondary" id="btn-test-connection">
+                                <span id="conn-btn-text"><i class="fa-solid fa-rotate"></i> Test Handshake</span>
+                            </button>
+                            <span class="handshake-status idle" id="handshake-result">
+                                <i class="fa-solid fa-circle-question"></i> Not Tested
+                            </span>
+                        </div>
+
+                        <hr class="divider">
+
+                        <!-- API Credentials Group -->
+                        <h3 class="subsection-title"><i class="fa-solid fa-gears"></i> AI & Scraper Integrations</h3>
+                        <div class="grid-2-col-compact">
+                            <div class="form-group">
+                                <label for="llm-provider">LLM Provider</label>
+                                <select id="llm-provider" class="form-select">
+                                    <option value="openrouter" selected>OpenRouter (Free Models)</option>
+                                    <option value="gemini">Gemini 1.5 Pro / Flash</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="llm-model">Model Selector</label>
+                                <select id="llm-model" class="form-select">
+                                    <option value="openrouter/free" selected>Auto-Route Free Model</option>
+                                    <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B Free</option>
+                                    <option value="google/gemma-4-31b-it:free">Gemma 4 31B Free</option>
+                                    <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B Free</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="llm-api-key">LLM API Key</label>
+                            <input type="password" id="llm-api-key" placeholder="Enter Gemini or OpenRouter Key">
+                        </div>
+                        <div class="form-group">
+                            <label for="apify-token">Apify API Token</label>
+                            <input type="password" id="apify-token" placeholder="Enter APIFY_API_TOKEN">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Module 3: Bot Active Pipeline & Tasks -->
+                <section class="card bento-full" id="pipeline-module">
+                    <div class="card-header">
+                        <div class="header-icon"><i class="fa-solid fa-list-check"></i></div>
+                        <h2>Autonomous SEO Task Pipeline</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-label">
+                                <span>Overall Campaign Execution Progress</span>
+                                <span id="pipeline-percent-text" class="highlight-text-green">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" id="pipeline-progress-bar"></div>
+                            </div>
+                        </div>
+                        <div class="task-grid">
+                            <div class="task-item pending" id="task-audit">
+                                <div class="task-status-icon"><i class="fa-solid fa-spinner"></i></div>
+                                <div class="task-details">
+                                    <p class="task-title">Technical Audit & Crawl</p>
+                                    <span class="task-badge" id="badge-audit">Pending</span>
+                                </div>
+                            </div>
+                            <div class="task-item pending" id="task-keywords">
+                                <div class="task-status-icon"><i class="fa-solid fa-spinner"></i></div>
+                                <div class="task-details">
+                                    <p class="task-title">Competitor Gap Analysis</p>
+                                    <span class="task-badge" id="badge-keywords">Pending</span>
+                                </div>
+                            </div>
+                            <div class="task-item pending" id="task-writing">
+                                <div class="task-status-icon"><i class="fa-solid fa-spinner"></i></div>
+                                <div class="task-details">
+                                    <p class="task-title">Copywriting & Code Gen</p>
+                                    <span class="task-badge" id="badge-writing">Pending</span>
+                                </div>
+                            </div>
+                            <div class="task-item pending" id="task-deploy">
+                                <div class="task-status-icon"><i class="fa-solid fa-spinner"></i></div>
+                                <div class="task-details">
+                                    <p class="task-title">SFTP Deploy & URL Routes</p>
+                                    <span class="task-badge" id="badge-deploy">Pending</span>
+                                </div>
+                            </div>
+                            <div class="task-item pending" id="task-index">
+                                <div class="task-status-icon"><i class="fa-solid fa-spinner"></i></div>
+                                <div class="task-details">
+                                    <p class="task-title">Search Console Indexing</p>
+                                    <span class="task-badge" id="badge-index">Pending</span>
+                                </div>
+                            </div>
+                            <div class="task-item pending" id="task-offpage">
+                                <div class="task-status-icon"><i class="fa-solid fa-spinner"></i></div>
+                                <div class="task-details">
+                                    <p class="task-title">Off-Page Authority Building</p>
+                                    <span class="task-badge" id="badge-offpage">Pending</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Module 5: Competitor Intel Scanner -->
+                <section class="card bento-full" id="competitor-module">
+                    <div class="card-header">
+                        <div class="header-icon"><i class="fa-solid fa-user-ninja"></i></div>
+                        <h2>Competitor Organic Ranking Gap Analysis</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-subtitle">Automatically crawling top rankings for your keyword. Showing how far behind we are from Rank #1.</p>
+                        
+                        <div class="grid-3-col">
+                            <!-- Competitor Cards -->
+                            <div class="competitor-card active-us">
+                                <div class="badge-us">Our Domain</div>
+                                <h3 id="comp-us-title">omnicalc.com</h3>
+                                <p class="comp-url" id="comp-us-url">https://omnicalc.com</p>
+                                <div class="stat-row">
+                                    <span>Domain Authority:</span>
+                                    <strong class="highlight-text-cyan" id="metric-us-da">DA 12</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Quality Backlinks:</span>
+                                    <strong class="highlight-text-cyan" id="metric-us-backlinks">18</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Core Web Vitals Speed:</span>
+                                    <strong class="highlight-text-green" id="metric-us-speed">102ms</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Schema.org Markup:</span>
+                                    <strong class="highlight-text-green" id="metric-us-schema"><i class="fa-solid fa-circle-check"></i> Complete</strong>
+                                </div>
+                            </div>
+
+                            <div class="competitor-card">
+                                <div class="badge-rank">Rank #1</div>
+                                <h3 id="comp1-name">taxcalculator.org</h3>
+                                <p class="comp-url" id="comp1-url">https://taxcalculator.org</p>
+                                <div class="stat-row">
+                                    <span>Domain Authority:</span>
+                                    <strong id="metric-comp1-da">DA 68</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Quality Backlinks:</span>
+                                    <strong id="metric-comp1-backlinks">14,200</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Core Web Vitals Speed:</span>
+                                    <strong id="metric-comp1-speed">480ms</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Schema.org Markup:</span>
+                                    <strong id="metric-comp1-schema"><i class="fa-solid fa-circle-xmark"></i> Missing FAQ</strong>
+                                </div>
+                            </div>
+
+                            <div class="competitor-card">
+                                <div class="badge-rank">Rank #2</div>
+                                <h3 id="comp2-name">finance-pro.com</h3>
+                                <p class="comp-url" id="comp2-url">https://finance-pro.com</p>
+                                <div class="stat-row">
+                                    <span>Domain Authority:</span>
+                                    <strong id="metric-comp2-da">DA 42</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Quality Backlinks:</span>
+                                    <strong id="metric-comp2-backlinks">3,450</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Core Web Vitals Speed:</span>
+                                    <strong id="metric-comp2-speed">210ms</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Schema.org Markup:</span>
+                                    <strong id="metric-comp2-schema"><i class="fa-solid fa-circle-check"></i> Complete</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deficit / Gap Highlights -->
+                        <div class="gap-analysis-summary">
+                            <h3><i class="fa-solid fa-triangle-exclamation"></i> Identified Ranking Deficit Matrix (Gap to Rank #1)</h3>
+                            <div class="gap-grid">
+                                <div class="gap-item-card critical">
+                                    <p class="gap-title">Backlink Authority Deficit</p>
+                                    <h4 id="gap-backlinks">-14,182 Backlinks</h4>
+                                    <p class="gap-remedy"><i class="fa-solid fa-arrow-trend-up"></i> Strategy: Deploying currency embed widgets to partner blogs to drive automated backlinks.</p>
+                                </div>
+                                <div class="gap-item-card optimum">
+                                    <p class="gap-title">Page Loading Speed Advantage</p>
+                                    <h4 id="gap-speed">+378ms Faster</h4>
+                                    <p class="gap-remedy"><i class="fa-solid fa-circle-check"></i> Web vitals exceed Rank #1 by 78%. Premium pure CSS implementation ensures Google Speed rank preference.</p>
+                                </div>
+                                <div class="gap-item-card warning">
+                                    <p class="gap-title">Schema.org Structured Data Gap</p>
+                                    <h4 id="gap-schema">We Have Advantage</h4>
+                                    <p class="gap-remedy"><i class="fa-solid fa-circle-check"></i> Bot is injecting Software & FAQ JSON-LD markup. Target competitor lacks structured search schema.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Floating Chatbot Interface -->
+    <div class="chatbot-container" id="chatbot-widget">
+        <button type="button" class="chatbot-toggle" id="chatbot-toggle-btn" aria-label="Open AI Assistant">
+            <i class="fa-solid fa-comment-dots"></i>
+            <span class="chat-badge" id="chat-notification-badge" style="display: none;">1</span>
+        </button>
+        <div class="chatbot-window" id="chatbot-window-element">
+            <div class="chat-header">
+                <div class="chat-bot-profile">
+                    <div class="bot-avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="bot-info">
+                        <h4>OmniSEO Assistant</h4>
+                        <span>Google AI Ultra Active</span>
+                    </div>
+                </div>
+                <button type="button" class="chat-close-btn" id="chat-close-btn" aria-label="Close Chat"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="chat-messages" id="chat-messages-container">
+                <div class="chat-message bot">
+                    <div class="message-content">
+                        Assalam-o-Alaikum Tanveer Bhai! Kaise hain aap? Main aap ki active SEO campaigns ki live reports de sakta hoon.
+                    </div>
+                </div>
+            </div>
+            <div class="chat-controls">
+                <label class="free-mode-toggle-container">
+                    <input type="checkbox" id="chat-free-mode" aria-label="Toggle Free Mode">
+                    <span>100% Free Mode (Gemma 9B)</span>
+                </label>
+            </div>
+            <form class="chat-input-area" id="chat-form">
+                <input type="text" id="chat-user-input" placeholder="Ask about campaign status..." autocomplete="off">
+                <button type="submit" id="chat-send-btn" aria-label="Send Message"><i class="fa-solid fa-paper-plane"></i></button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js?v=2026060201"></script>
+</body>
+</html>
