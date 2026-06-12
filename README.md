@@ -153,3 +153,10 @@ To ensure complete credentials security:
 5. Click **Launch Autopilot Campaign**.
 6. Follow real-time bot operations in the streaming console.
 7. Click the **Artifact Preview** tab to review generated code or test the live widget deployment subdirectory link!
+
+---
+
+## ❤️ Special Thanks & Acknowledgements
+
+A special shoutout and heartiest thanks to **Beyond Tahir** for showing us the path, guiding the vision, and inspiring the development of these autonomous SEO agent workflows!
+
