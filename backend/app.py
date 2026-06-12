@@ -297,7 +297,7 @@ def telemetry_stream(campaign_id):
                     try:
                         log_entry = q.get(timeout=1.0)
                         yield f"data: {json.dumps(log_entry)}\n\n"
-                        if log_entry.get("status") == "completed" or (log_entry.get("taskStatus") == "completed" and log_entry.get("task") == "index"):
+                        if log_entry.get("status") == "completed" or (log_entry.get("taskStatus") == "completed" and log_entry.get("task") == "offpage"):
                             break
                     except queue.Empty:
                         yield ": keep-alive\n\n"
