@@ -156,7 +156,14 @@ To ensure complete credentials security:
 
 ---
 
+## 👤 Creator & Maintainer
+
+* **Tanveer Hassan** — Connect with me on [LinkedIn](https://www.linkedin.com/in/tanveer-hassan-bb3b51201)
+
+---
+
 ## ❤️ Special Thanks & Acknowledgements
 
 A special shoutout and heartiest thanks to **Beyond Tahir** for showing us the path, guiding the vision, and inspiring the development of these autonomous SEO agent workflows!
+
 
