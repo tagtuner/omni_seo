@@ -90,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentProgress = 0;
     let isHydrating = false;
     let isLiveMode = false;
+    let isFirstLoad = true;
 
     // Competitor Profiles Database
     const competitorDb = [
@@ -428,6 +429,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         if (isLiveMode) {
+            // Check if selected campaign is already running or queued
+            const existingCamp = selectedCampaignId ? campaignsList.find(c => String(c.id) === String(selectedCampaignId)) : null;
+            if (existingCamp && (existingCamp.status === 'running' || existingCamp.status === 'queued')) {
+                addTerminalLog(`[SYSTEM] Re-connecting to active campaign (ID: ${selectedCampaignId})...`, 'terminal-system-msg');
+                connectCampaignStream(selectedCampaignId);
+                return;
+            }
+
             addTerminalLog(`[SYSTEM] Live Autopilot sequence initiated. Connecting backend...`, 'terminal-system-msg');
             
             fetch('/api/campaigns', {
@@ -715,26 +724,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 campaignsList = data;
                 renderCampaignsSidebar();
                 
-                // If there's an active running campaign, restore selection
-                if (selectedCampaignId && !String(selectedCampaignId).startsWith('sim_')) {
-                    const activeCamp = campaignsList.find(c => c.id === parseInt(selectedCampaignId));
-                    if (activeCamp) {
-                        currentProgress = activeCamp.progress;
-                        pipelinePercentText.textContent = `${currentProgress}%`;
-                        pipelineProgressBar.style.width = `${currentProgress}%`;
-                        restoreTaskUIStates();
-                        
-                        if (activeCamp.status === 'running') {
-                            botRunning = true;
-                            botToggle.checked = true;
-                            botPulse.className = "status-indicator running";
-                            botStatusText.textContent = "BOT ENGAGED";
-                            engageStatusLabel.textContent = "BOT ACTIVE";
-                            engageStatusLabel.style.color = "var(--neon-green)";
-                            liveIndicator.className = "terminal-badge pulse-green";
-                            liveIndicator.textContent = "RUNNING";
-                        }
-                    }
+                // Restore selection if this is the first load
+                if (isFirstLoad && selectedCampaignId && !String(selectedCampaignId).startsWith('sim_')) {
+                    isFirstLoad = false;
+                    selectCampaign(selectedCampaignId);
+                } else if (isFirstLoad) {
+                    isFirstLoad = false;
                 }
             })
             .catch(err => console.error("Error loading campaigns:", err));
