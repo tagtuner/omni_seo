@@ -106,6 +106,7 @@ def update_campaign_status(campaign_id, status=None, progress=None, artifact_htm
     conn.close()
 def run_monitoring_loop(campaign_id, domain, keyword):
     clean_domain = domain.replace("https://", "").replace("http://", "").replace("www.", "").strip("/")
+    protocol = "https://" if domain.lower().startswith("https://") else "http://"
     loop_count = 0
     print(f"[SYSTEM] Starting monitoring daemon thread for campaign {campaign_id}")
     while True:
@@ -124,7 +125,7 @@ def run_monitoring_loop(campaign_id, domain, keyword):
             loop_count += 1
             
             if loop_count % 3 == 1:
-                msg = f"MONITOR: Verifying Google Search Index state for target URL http://{clean_domain}/taxes/..."
+                msg = f"MONITOR: Verifying Google Search Index state for target URL {protocol}{clean_domain}/taxes/..."
                 save_log_to_db(campaign_id, 100, "offpage", msg, "terminal-info-msg")
             elif loop_count % 3 == 2:
                 msg = f"MONITOR: Querying organic competitor rankings for keyword '{keyword}'..."
