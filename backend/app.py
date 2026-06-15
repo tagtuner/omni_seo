@@ -360,9 +360,9 @@ def telemetry_stream(campaign_id):
             SELECT progress, task, message, class_name, task_status, artifact 
             FROM campaign_logs 
             WHERE campaign_id = ? 
-            ORDER BY id ASC
+            ORDER BY id DESC LIMIT 150
         ''', (campaign_id,))
-        rows = cursor.fetchall()
+        rows = reversed(cursor.fetchall())
         conn.close()
         
         for row in rows:

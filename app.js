@@ -734,6 +734,9 @@ document.addEventListener('DOMContentLoaded', () => {
         line.className = className;
         line.textContent = message;
         terminalOutput.appendChild(line);
+        while (terminalOutput.children.length > 200) {
+            terminalOutput.removeChild(terminalOutput.firstChild);
+        }
         terminalOutput.scrollTop = terminalOutput.scrollHeight;
     }
 
