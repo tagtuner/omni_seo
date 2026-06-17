@@ -19,10 +19,14 @@ The system is designed with a premium glassmorphic dark-theme UI and features re
 ## ⚡ Key Features
 
 1. **Autonomous Competitor Audit**: Crawls target search results for specified keywords using Apify's Google Search Scraper to identify target competitors, their text-to-code ratio, schema status, and layout structural elements.
-2. **AI Code-Generator (Bento Engine)**: Leverages LLM models (Gemini / OpenRouter) to write bespoke, context-aware interactive widgets (custom calculators, pricing sheets, converter apps) dynamically wrapped in clean SEO-semantic HTML.
-3. **Automated Subdirectory Deployment**: Deploys generated assets using Paramiko SFTP/ftplib directly to designated subdirectories (e.g., `/taxes/umrah-taxi-service/`) keeping primary site configurations safe.
-4. **Real-time Console Stream**: Uses HTML5 Server-Sent Events (SSE) to pipe live python backend logs straight to the interactive web terminal.
-5. **Interactive Preview Workspace**: Allows in-dashboard live interaction with generated calculators via iframe, alongside a syntax-highlighted source code editor.
+2. **Competitor Layout Scraper**: Crawls competitor page text layouts via `apify/website-content-crawler` to gather context-aware intelligence on Rank #1 pages for LLM copywriting enrichment.
+3. **AI Code-Generator (Bento Engine)**: Leverages LLM models (Gemini / OpenRouter) to write bespoke, context-aware interactive widgets (custom calculators, pricing sheets, converter apps) dynamically wrapped in clean SEO-semantic HTML.
+4. **Automated Subdirectory Deployment**: Deploys generated assets using Paramiko SFTP/ftplib directly to designated subdirectories (e.g., `/taxes/umrah-taxi-service/`) keeping primary site configurations safe.
+5. **Contact Scraping & Leads Generation**: Extracts competitor emails, phone numbers, and social media handles (LinkedIn/Twitter) via `vdrmota/contact-info-scraper` and saves them to the campaign database.
+6. **AI Outreach Pitch Generator**: Exposes a specialized API route to automatically draft personalized email outreach campaigns using Gemini/Llama model endpoints, directly integrated into the interactive AI chatbot widget.
+7. **Real-time Console Stream**: Uses HTML5 Server-Sent Events (SSE) to pipe live python backend logs straight to the interactive web terminal.
+8. **Interactive Preview Workspace**: Allows in-dashboard live interaction with generated calculators via iframe, alongside a syntax-highlighted source code editor.
+9. **Sidebar Scrollspy & Smooth Navigation**: Syncs dashboard view cards with sidebar navigation menu clicks (smooth scrolling) and automatically updates highlighting on page scroll.
 
 ---
 
