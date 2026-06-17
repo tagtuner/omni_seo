@@ -28,7 +28,7 @@ def dispatch_log(campaign_id, log_data):
             for q in subscribers[campaign_id]:
                 q.put(log_data)
 
-def save_log_to_db(campaign_id, progress, task, message, class_name, task_status=None, artifact=None, backlinks_count=None, tech_stack=None, comp1_name=None, comp1_url=None, comp2_name=None, comp2_url=None):
+def save_log_to_db(campaign_id, progress, task, message, class_name, task_status=None, artifact=None, backlinks_count=None, tech_stack=None, comp1_name=None, comp1_url=None, comp2_name=None, comp2_url=None, scraped_leads=None):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
@@ -61,10 +61,12 @@ def save_log_to_db(campaign_id, progress, task, message, class_name, task_status
         log_entry["comp2_name"] = comp2_name
     if comp2_url is not None:
         log_entry["comp2_url"] = comp2_url
+    if scraped_leads is not None:
+        log_entry["scraped_leads"] = scraped_leads
         
     dispatch_log(campaign_id, log_entry)
 
-def update_campaign_status(campaign_id, status=None, progress=None, artifact_html=None, backlinks_count=None, tech_stack=None, comp1_name=None, comp1_url=None, comp2_name=None, comp2_url=None):
+def update_campaign_status(campaign_id, status=None, progress=None, artifact_html=None, backlinks_count=None, tech_stack=None, comp1_name=None, comp1_url=None, comp2_name=None, comp2_url=None, scraped_leads=None):
     conn = get_db_connection()
     cursor = conn.cursor()
     updates = []
@@ -97,6 +99,9 @@ def update_campaign_status(campaign_id, status=None, progress=None, artifact_htm
     if comp2_url is not None:
         updates.append("comp2_url = ?")
         params.append(comp2_url)
+    if scraped_leads is not None:
+        updates.append("scraped_leads = ?")
+        params.append(scraped_leads)
         
     if updates:
         params.append(campaign_id)
@@ -142,9 +147,9 @@ def run_campaign_wrapper(campaign_id, config):
     try:
         update_campaign_status(campaign_id, status='running', progress=0, backlinks_count=0, tech_stack='unknown')
         
-        def log_callback(progress, task, message, class_name="terminal-info-msg", taskStatus=None, artifact=None, backlinks_count=None, tech_stack=None, comp1_name=None, comp1_url=None, comp2_name=None, comp2_url=None):
-            save_log_to_db(campaign_id, progress, task, message, class_name, taskStatus, artifact, backlinks_count, tech_stack, comp1_name, comp1_url, comp2_name, comp2_url)
-            update_campaign_status(campaign_id, progress=progress, artifact_html=artifact, backlinks_count=backlinks_count, tech_stack=tech_stack, comp1_name=comp1_name, comp1_url=comp1_url, comp2_name=comp2_name, comp2_url=comp2_url)
+        def log_callback(progress, task, message, class_name="terminal-info-msg", taskStatus=None, artifact=None, backlinks_count=None, tech_stack=None, comp1_name=None, comp1_url=None, comp2_name=None, comp2_url=None, scraped_leads=None):
+            save_log_to_db(campaign_id, progress, task, message, class_name, taskStatus, artifact, backlinks_count, tech_stack, comp1_name, comp1_url, comp2_name, comp2_url, scraped_leads)
+            update_campaign_status(campaign_id, progress=progress, artifact_html=artifact, backlinks_count=backlinks_count, tech_stack=tech_stack, comp1_name=comp1_name, comp1_url=comp1_url, comp2_name=comp2_name, comp2_url=comp2_url, scraped_leads=scraped_leads)
                 
         # Run pipeline
         success, message = run_campaign_pipeline(config, log_callback)
@@ -213,7 +218,7 @@ def list_campaigns():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT id, domain, keyword, duration, prompt, status, progress, created_at, artifact_html, backlinks_count, tech_stack, audit_only, comp1_name, comp1_url, comp2_name, comp2_url
+        SELECT id, domain, keyword, duration, prompt, status, progress, created_at, artifact_html, backlinks_count, tech_stack, audit_only, comp1_name, comp1_url, comp2_name, comp2_url, scraped_leads
         FROM campaigns
         ORDER BY id DESC
     ''')
@@ -222,6 +227,14 @@ def list_campaigns():
     
     campaigns = []
     for r in rows:
+        # Deserialize scraped_leads
+        leads = []
+        if "scraped_leads" in r.keys() and r["scraped_leads"]:
+            try:
+                leads = json.loads(r["scraped_leads"])
+            except Exception:
+                leads = []
+                
         campaigns.append({
             "id": r["id"],
             "domain": r["domain"],
@@ -238,7 +251,8 @@ def list_campaigns():
             "comp1_name": r["comp1_name"] if "comp1_name" in r.keys() else None,
             "comp1_url": r["comp1_url"] if "comp1_url" in r.keys() else None,
             "comp2_name": r["comp2_name"] if "comp2_name" in r.keys() else None,
-            "comp2_url": r["comp2_url"] if "comp2_url" in r.keys() else None
+            "comp2_url": r["comp2_url"] if "comp2_url" in r.keys() else None,
+            "scraped_leads": leads
         })
         
     return jsonify(campaigns)
@@ -512,6 +526,76 @@ Answer Tanveer Bhai's question directly, briefly, and clearly. If he asks about 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/api/campaigns/<int:campaign_id>/generate-pitch', methods=['POST'])
+def generate_pitch(campaign_id):
+    data = request.json or {}
+    email = data.get("email", "").strip()
+    target_domain = data.get("domain", "").strip()
+    api_config = data.get("api", {})
+    
+    llm_api_key = api_config.get("llm_api_key")
+    llm_provider = api_config.get("llm_provider", "gemini").lower()
+    llm_model = api_config.get("llm_model", "gemini-1.5-flash")
+    free_mode = data.get("free_mode", False)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT domain, keyword, comp1_url, comp1_name FROM campaigns WHERE id = ?', (campaign_id,))
+    camp = cursor.fetchone()
+    conn.close()
+    
+    if not camp:
+        return jsonify({"status": "error", "message": "Campaign not found."}), 404
+        
+    keyword = camp["keyword"]
+    my_domain = camp["domain"]
+    comp1_name = camp["comp1_name"] or "competitors"
+    comp1_url = camp["comp1_url"] or ""
+    
+    prompt = f"""You are "Beyond SEO" outreach automation engine.
+Write a highly personalized, compelling, and professional backlink outreach email pitch to the owner of {target_domain} (contact: {email}).
+Our site is: {my_domain}
+We have built an outstanding, interactive utility tool for keyword: "{keyword}" (specifically, a premium dark-themed tax/financial calculator utility).
+
+Competitor Rank #1 context: {comp1_name} ({comp1_url}) is ranking for "{keyword}", but their layout is non-interactive. We want to pitch the target website ({target_domain}) to link to our high-value interactive utility page (or replace any broken links to competitor sites).
+
+Requirements for the pitch:
+1. Short, interesting, and clear subject line.
+2. Address the recipient respectfully. Mention their domain ({target_domain}).
+3. Highlight the value of our interactive calculator for their audience.
+4. Keep the tone helpful, non-spammy, and concise (under 150 words).
+5. Output ONLY the email subject and body. No other text, explanations, or quotes.
+"""
+
+    try:
+        if free_mode:
+            if not llm_api_key:
+                return jsonify({"status": "error", "message": "API key required for Free Mode."}), 400
+            reply = call_openrouter_api(llm_api_key, "openrouter/free", prompt)
+        else:
+            if llm_provider == "gemini" and llm_api_key:
+                reply = call_gemini_api(llm_api_key, "gemini-1.5-flash", prompt)
+            elif llm_provider == "openrouter" and llm_api_key:
+                reply = call_openrouter_api(llm_api_key, llm_model, prompt)
+            else:
+                # Fallback if no LLM key provided
+                reply = f"""Subject: Interactive calculator resource for {target_domain}
+
+Hello,
+
+I was reading through your site at {target_domain} and noticed you cover topic-relevant guides.
+
+We recently launched a fully interactive, mobile-optimized calculator tool for "{keyword}" on {my_domain}. Unlike the standard static tables on sites like {comp1_name}, ours allows users to estimate their values in real-time.
+
+I thought this would make a great resource add for your readers. Let me know if you would be open to taking a look!
+
+Best regards,
+OmniSEO Team"""
+                
+        return jsonify({"status": "success", "pitch": reply})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 def init_and_migrate_db():
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -565,6 +649,13 @@ def init_and_migrate_db():
             cursor.execute("ALTER TABLE campaigns ADD COLUMN comp2_url TEXT;")
             conn.commit()
             print("Successfully added comp2_url column to campaigns table.")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN scraped_leads TEXT DEFAULT '[]';")
+            conn.commit()
+            print("Successfully added scraped_leads column to campaigns table.")
         except sqlite3.OperationalError:
             pass
             

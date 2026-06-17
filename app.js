@@ -338,6 +338,179 @@ document.addEventListener('DOMContentLoaded', () => {
         gaps.schema.nextElementSibling.innerHTML = `<i class="fa-solid fa-circle-info"></i> Target competitor lacks structured search schema. Bot will exploit this gap first.`;
     }
 
+    function renderLeads(leads) {
+        const tableBody = document.getElementById('leads-table-body');
+        const badgeCount = document.getElementById('leads-count-badge');
+        
+        if (!tableBody) return;
+        
+        if (typeof leads === 'string') {
+            try {
+                leads = JSON.parse(leads);
+            } catch(e) {
+                leads = [];
+            }
+        }
+        
+        const leadsList = Array.isArray(leads) ? leads : [];
+        
+        if (badgeCount) {
+            badgeCount.textContent = leadsList.length;
+        }
+        
+        if (leadsList.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="empty-leads-msg">No outreach leads scanned yet. Run a campaign to trigger the contact details scraper.</td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tableBody.innerHTML = '';
+        leadsList.forEach(lead => {
+            const domain = lead.domain || 'N/A';
+            const email = lead.email || 'N/A';
+            const phone = lead.phone || 'N/A';
+            
+            let socialsHTML = '';
+            if (lead.linkedin) {
+                socialsHTML += `<a href="${lead.linkedin}" target="_blank" class="social-link" title="LinkedIn Profile"><i class="fa-brands fa-linkedin"></i></a>`;
+            }
+            if (lead.twitter) {
+                socialsHTML += `<a href="${lead.twitter}" target="_blank" class="social-link" title="Twitter Profile"><i class="fa-brands fa-twitter"></i></a>`;
+            }
+            if (!socialsHTML) {
+                socialsHTML = '<span style="color:var(--text-muted); font-size:0.75rem;">None</span>';
+            }
+            
+            const tr = document.createElement('tr');
+            const displayDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '');
+            const domainLink = domain.startsWith('http') ? domain : `https://${domain}`;
+            
+            tr.innerHTML = `
+                <td><a href="${domainLink}" target="_blank">${displayDomain}</a></td>
+                <td>${email !== 'N/A' && email ? `<a href="mailto:${email}">${email}</a>` : '<span style="color:var(--text-muted);">Not Found</span>'}</td>
+                <td>${phone !== 'N/A' && phone ? phone : '<span style="color:var(--text-muted);">Not Found</span>'}</td>
+                <td><div class="social-links-wrapper">${socialsHTML}</div></td>
+                <td class="actions-col">
+                    ${(email && email !== 'N/A') ? `
+                        <button type="button" class="btn-pitch" data-domain="${displayDomain}" data-email="${email}">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Pitch
+                        </button>
+                    ` : `
+                        <button type="button" class="btn-pitch" style="opacity:0.4; cursor:not-allowed;" disabled>
+                            <i class="fa-solid fa-ban"></i> No Email
+                        </button>
+                    `}
+                </td>
+            `;
+            
+            const pitchBtn = tr.querySelector('.btn-pitch');
+            if (pitchBtn && !pitchBtn.disabled) {
+                pitchBtn.addEventListener('click', () => {
+                    handleGeneratePitch(displayDomain, email);
+                });
+            }
+            
+            tableBody.appendChild(tr);
+        });
+    }
+
+    function displayOutreachPitch(pitchText) {
+        chatbotWidget.classList.add('open');
+        chatNotificationBadge.style.display = 'none';
+        appendChatMessage(`Here is your personalized AI Outreach Pitch:\n\n${pitchText}`, 'bot');
+    }
+
+    function handleGeneratePitch(domain, email) {
+        if (!selectedCampaignId || String(selectedCampaignId).startsWith('sim_')) {
+            const mockPitch = `Subject: Quick Question regarding ${domain}
+
+Hello,
+
+I came across your site at ${domain} and loved your coverage of topic-relevant guides.
+
+We recently launched a fully interactive, mobile-optimized calculator tool for "${targetKeyword.value}" on ${targetDomain.value}. Unlike the standard static tables on sites like ${comp1Name.textContent}, ours allows users to estimate their values in real-time.
+
+I thought this would make an excellent resource addition for your readers. Let me know if you would be open to taking a look!
+
+Best regards,
+OmniSEO Outbound Agent`;
+            
+            displayOutreachPitch(mockPitch);
+            return;
+        }
+        
+        const btn = document.querySelector(`.btn-pitch[data-domain="${domain}"][data-email="${email}"]`);
+        let oldHTML = '';
+        if (btn) {
+            oldHTML = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Pitching...`;
+            btn.disabled = true;
+        }
+        
+        fetch(`/api/campaigns/${selectedCampaignId}/generate-pitch`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                domain: domain,
+                email: email,
+                api: {
+                    llm_provider: llmProvider.value,
+                    llm_model: llmModel.value,
+                    llm_api_key: llmApiKey.value,
+                    free_mode: chatFreeMode.checked
+                }
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (btn) {
+                btn.innerHTML = oldHTML;
+                btn.disabled = false;
+            }
+            if (data.status === 'success') {
+                displayOutreachPitch(data.pitch);
+            } else {
+                alert(`Failed to generate pitch: ${data.message}`);
+            }
+        })
+        .catch(err => {
+            if (btn) {
+                btn.innerHTML = oldHTML;
+                btn.disabled = false;
+            }
+            alert(`Network error: ${err.message}`);
+        });
+    }
+
+    function initCompetitorTabs() {
+        const tabGap = document.getElementById('tab-comp-gap');
+        const tabLeads = document.getElementById('tab-comp-leads');
+        const paneGap = document.getElementById('pane-comp-gap');
+        const paneLeads = document.getElementById('pane-comp-leads');
+        
+        if (tabGap && tabLeads && paneGap && paneLeads) {
+            tabGap.addEventListener('click', () => {
+                tabGap.classList.add('active');
+                tabLeads.classList.remove('active');
+                paneGap.classList.add('active');
+                paneLeads.classList.remove('active');
+            });
+            
+            tabLeads.addEventListener('click', () => {
+                tabLeads.classList.add('active');
+                tabGap.classList.remove('active');
+                paneLeads.classList.add('active');
+                paneGap.classList.remove('active');
+            });
+        }
+    }
+
+    // Call competitor tabs initialization
+    initCompetitorTabs();
+
     // 3. Test Hosting Handshake
     btnTestConn.addEventListener('click', () => {
         connBtnText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Checking Access...`;
@@ -604,11 +777,29 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Sync status in list
             const item = campaignsList.find(c => c.id === selectedCampaignId);
+            const mockLeads = [
+                {
+                    "domain": comp1Url.textContent || "https://competitor1.com",
+                    "email": `contact@${(comp1Name.textContent || "competitor1").replace(/\s+/g, "").toLowerCase()}`,
+                    "phone": "+1-555-0199",
+                    "linkedin": "https://linkedin.com/company/competitor-one",
+                    "twitter": "https://twitter.com/competitor_one"
+                },
+                {
+                    "domain": comp2Url.textContent || "https://competitor2.com",
+                    "email": `info@${(comp2Name.textContent || "competitor2").replace(/\s+/g, "").toLowerCase()}`,
+                    "phone": "+1-555-0244",
+                    "linkedin": "https://linkedin.com/company/competitor-two",
+                    "twitter": "https://twitter.com/competitor_two"
+                }
+            ];
             if (item) {
                 item.status = 'completed';
                 item.progress = 100;
+                item.scraped_leads = mockLeads;
                 renderCampaignsSidebar();
             }
+            renderLeads(mockLeads);
             saveState();
             return;
         }
@@ -834,6 +1025,33 @@ document.addEventListener('DOMContentLoaded', () => {
             recalculateCompetitors();
         }
 
+        // Restore scraped leads
+        if (String(id).startsWith('sim_')) {
+            if (camp.status === 'completed') {
+                const mockLeads = [
+                    {
+                        "domain": comp1Url.textContent || "https://competitor1.com",
+                        "email": `contact@${(comp1Name.textContent || "competitor1").replace(/\s+/g, "").toLowerCase()}`,
+                        "phone": "+1-555-0199",
+                        "linkedin": "https://linkedin.com/company/competitor-one",
+                        "twitter": "https://twitter.com/competitor_one"
+                    },
+                    {
+                        "domain": comp2Url.textContent || "https://competitor2.com",
+                        "email": `info@${(comp2Name.textContent || "competitor2").replace(/\s+/g, "").toLowerCase()}`,
+                        "phone": "+1-555-0244",
+                        "linkedin": "https://linkedin.com/company/competitor-two",
+                        "twitter": "https://twitter.com/competitor_two"
+                    }
+                ];
+                renderLeads(mockLeads);
+            } else {
+                renderLeads(camp.scraped_leads || []);
+            }
+        } else {
+            renderLeads(camp.scraped_leads || []);
+        }
+
         // Restore backlinks count badge and tech stack badge
         const backlinksCountText = document.getElementById('backlinks-count-text');
         if (backlinksCountText) {
@@ -898,6 +1116,11 @@ document.addEventListener('DOMContentLoaded', () => {
             envModeBadge.className = "environment-badge live";
             envModeBadge.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> <span>LIVE RUN ACTIVE</span>`;
             
+            currentProgress = camp.progress;
+            pipelinePercentText.textContent = `${currentProgress}%`;
+            pipelineProgressBar.style.width = `${currentProgress}%`;
+            restoreTaskUIStates();
+            
             if (camp.status === 'running' || camp.status === 'monitoring') {
                 botRunning = true;
                 botToggle.checked = true;
@@ -961,10 +1184,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
+            if (data.scraped_leads !== undefined) {
+                let leads = [];
+                try {
+                    leads = typeof data.scraped_leads === 'string' ? JSON.parse(data.scraped_leads) : data.scraped_leads;
+                } catch(e) {
+                    leads = [];
+                }
+                const item = campaignsList.find(c => String(c.id) === String(id));
+                if (item) {
+                    item.scraped_leads = leads;
+                }
+                renderLeads(leads);
+            }
+            
             if (data.progress !== undefined) {
                 currentProgress = data.progress;
                 pipelinePercentText.textContent = `${currentProgress}%`;
                 pipelineProgressBar.style.width = `${currentProgress}%`;
+                restoreTaskUIStates();
                 
                 // Update backlinks counter if sent
                 if (data.backlinks_count !== undefined) {
@@ -1221,30 +1459,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function restoreTaskUIStates() {
         const taskKeys = ['audit', 'keywords', 'writing', 'deploy', 'index', 'offpage'];
+        const isAuditOnly = auditOnlyToggle ? auditOnlyToggle.checked : false;
+        
         taskKeys.forEach((key) => {
             const task = tasks[key];
             if (!task) return;
-            let taskProgressStart = 0;
-            let taskProgressEnd = 0;
-            if (key === 'audit') { taskProgressStart = 0; taskProgressEnd = 20; }
-            else if (key === 'keywords') { taskProgressStart = 20; taskProgressEnd = 40; }
-            else if (key === 'writing') { taskProgressStart = 40; taskProgressEnd = 60; }
-            else if (key === 'deploy') { taskProgressStart = 60; taskProgressEnd = 80; }
-            else if (key === 'index') { taskProgressStart = 80; taskProgressEnd = 90; }
-            else if (key === 'offpage') { taskProgressStart = 90; taskProgressEnd = 100; }
-
-            if (currentProgress >= taskProgressEnd) {
-                task.item.className = "task-item completed";
-                task.badge.textContent = "Done";
-                task.item.querySelector('.task-status-icon').innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
-            } else if (currentProgress > taskProgressStart && currentProgress < taskProgressEnd) {
-                task.item.className = "task-item active";
-                task.badge.textContent = "Running";
-                task.item.querySelector('.task-status-icon').innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+            
+            if (isAuditOnly && ['writing', 'deploy', 'index', 'offpage'].includes(key)) {
+                if (currentProgress >= 40) {
+                    task.item.className = "task-item completed";
+                    task.badge.textContent = "Bypassed";
+                    task.item.querySelector('.task-status-icon').innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+                } else {
+                    task.item.className = "task-item pending";
+                    task.badge.textContent = "Pending";
+                    task.item.querySelector('.task-status-icon').innerHTML = `<i class="fa-solid fa-spinner"></i>`;
+                }
             } else {
-                task.item.className = "task-item pending";
-                task.badge.textContent = "Pending";
-                task.item.querySelector('.task-status-icon').innerHTML = `<i class="fa-solid fa-spinner"></i>`;
+                let taskProgressStart = 0;
+                let taskProgressEnd = 0;
+                if (key === 'audit') { taskProgressStart = 0; taskProgressEnd = 20; }
+                else if (key === 'keywords') { taskProgressStart = 20; taskProgressEnd = 40; }
+                else if (key === 'writing') { taskProgressStart = 40; taskProgressEnd = 60; }
+                else if (key === 'deploy') { taskProgressStart = 60; taskProgressEnd = 80; }
+                else if (key === 'index') { taskProgressStart = 80; taskProgressEnd = 90; }
+                else if (key === 'offpage') { taskProgressStart = 90; taskProgressEnd = 100; }
+
+                if (currentProgress >= taskProgressEnd) {
+                    task.item.className = "task-item completed";
+                    task.badge.textContent = "Done";
+                    task.item.querySelector('.task-status-icon').innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+                } else if (currentProgress > taskProgressStart && currentProgress < taskProgressEnd) {
+                    task.item.className = "task-item active";
+                    task.badge.textContent = "Running";
+                    task.item.querySelector('.task-status-icon').innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+                } else {
+                    task.item.className = "task-item pending";
+                    task.badge.textContent = "Pending";
+                    task.item.querySelector('.task-status-icon').innerHTML = `<i class="fa-solid fa-spinner"></i>`;
+                }
             }
         });
     }
@@ -1386,4 +1639,92 @@ document.addEventListener('DOMContentLoaded', () => {
     llmModel.addEventListener('change', saveState);
     llmApiKey.addEventListener('change', saveState);
     apifyToken.addEventListener('change', saveState);
+
+    // Sidebar Navigation Scroll handlers
+    const mainContent = document.querySelector('.main-content');
+    const navDashboard = document.getElementById('nav-dashboard');
+    const navCredentials = document.getElementById('nav-credentials');
+    const navCompetitors = document.getElementById('nav-competitors');
+    const navLogs = document.getElementById('nav-logs');
+
+    function scrollToSection(targetId) {
+        const target = document.getElementById(targetId);
+        if (target && mainContent) {
+            const containerRect = mainContent.getBoundingClientRect();
+            const targetRect = target.getBoundingClientRect();
+            const relativeTop = targetRect.top - containerRect.top + mainContent.scrollTop;
+            mainContent.scrollTo({
+                top: relativeTop - 20,
+                behavior: 'smooth'
+            });
+        }
+    }
+
+    if (navDashboard) {
+        navDashboard.addEventListener('click', (e) => {
+            e.preventDefault();
+            scrollToSection('config-module');
+        });
+    }
+
+    if (navCredentials) {
+        navCredentials.addEventListener('click', (e) => {
+            e.preventDefault();
+            scrollToSection('hosting-module');
+        });
+    }
+
+    if (navCompetitors) {
+        navCompetitors.addEventListener('click', (e) => {
+            e.preventDefault();
+            scrollToSection('competitor-module');
+        });
+    }
+
+    if (navLogs) {
+        navLogs.addEventListener('click', (e) => {
+            e.preventDefault();
+            scrollToSection('console-module');
+        });
+    }
+
+    // Scrollspy to automatically highlight active sidebar nav items
+    if (mainContent) {
+        mainContent.addEventListener('scroll', () => {
+            const sections = [
+                { id: 'config-module', link: navDashboard },
+                { id: 'hosting-module', link: navCredentials },
+                { id: 'competitor-module', link: navCompetitors },
+                { id: 'console-module', link: navLogs }
+            ];
+
+            const containerRect = mainContent.getBoundingClientRect();
+            let activeSection = null;
+
+            for (const section of sections) {
+                const element = document.getElementById(section.id);
+                if (element) {
+                    const rect = element.getBoundingClientRect();
+                    const relativeTop = rect.top - containerRect.top;
+                    if (relativeTop <= 100) {
+                        activeSection = section;
+                    }
+                }
+            }
+
+            if (!activeSection) {
+                activeSection = sections[0];
+            }
+
+            sections.forEach(section => {
+                if (section.link) {
+                    if (section.link === activeSection.link) {
+                        section.link.classList.add('active');
+                    } else {
+                        section.link.classList.remove('active');
+                    }
+                }
+            });
+        });
+    }
 });

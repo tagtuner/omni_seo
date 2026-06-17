@@ -317,99 +317,134 @@
                 <section class="card bento-full" id="competitor-module">
                     <div class="card-header">
                         <div class="header-icon"><i class="fa-solid fa-user-ninja"></i></div>
-                        <h2>Competitor Organic Ranking Gap Analysis</h2>
+                        <h2>Competitor Intelligence & Outreach</h2>
+                        <div class="competitor-tabs">
+                            <button type="button" class="comp-tab active" id="tab-comp-gap" data-target="pane-comp-gap">
+                                <i class="fa-solid fa-chart-simple"></i> Ranking Gap
+                            </button>
+                            <button type="button" class="comp-tab" id="tab-comp-leads" data-target="pane-comp-leads">
+                                <i class="fa-solid fa-envelope-open-text"></i> Outreach Leads <span class="badge-count" id="leads-count-badge">0</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <p class="card-subtitle">Automatically crawling top rankings for your keyword. Showing how far behind we are from Rank #1.</p>
-                        
-                        <div class="grid-3-col">
-                            <!-- Competitor Cards -->
-                            <div class="competitor-card active-us">
-                                <div class="badge-us">Our Domain</div>
-                                <h3 id="comp-us-title">omnicalc.com</h3>
-                                <p class="comp-url" id="comp-us-url">https://omnicalc.com</p>
-                                <div class="stat-row">
-                                    <span>Domain Authority:</span>
-                                    <strong class="highlight-text-cyan" id="metric-us-da">DA 12</strong>
+                        <!-- Ranking Gap Pane -->
+                        <div class="comp-pane active" id="pane-comp-gap">
+                            <p class="card-subtitle">Automatically crawling top rankings for your keyword. Showing how far behind we are from Rank #1.</p>
+                            
+                            <div class="grid-3-col">
+                                <!-- Competitor Cards -->
+                                <div class="competitor-card active-us">
+                                    <div class="badge-us">Our Domain</div>
+                                    <h3 id="comp-us-title">omnicalc.com</h3>
+                                    <p class="comp-url" id="comp-us-url">https://omnicalc.com</p>
+                                    <div class="stat-row">
+                                        <span>Domain Authority:</span>
+                                        <strong class="highlight-text-cyan" id="metric-us-da">DA 12</strong>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span>Quality Backlinks:</span>
+                                        <strong class="highlight-text-cyan" id="metric-us-backlinks">18</strong>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span>Core Web Vitals Speed:</span>
+                                        <strong class="highlight-text-green" id="metric-us-speed">102ms</strong>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span>Schema.org Markup:</span>
+                                        <strong class="highlight-text-green" id="metric-us-schema"><i class="fa-solid fa-circle-check"></i> Complete</strong>
+                                    </div>
                                 </div>
-                                <div class="stat-row">
-                                    <span>Quality Backlinks:</span>
-                                    <strong class="highlight-text-cyan" id="metric-us-backlinks">18</strong>
+
+                                <div class="competitor-card">
+                                    <div class="badge-rank">Rank #1</div>
+                                    <h3 id="comp1-name">taxcalculator.org</h3>
+                                    <p class="comp-url" id="comp1-url">https://taxcalculator.org</p>
+                                    <div class="stat-row">
+                                        <span>Domain Authority:</span>
+                                        <strong id="metric-comp1-da">DA 68</strong>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span>Quality Backlinks:</span>
+                                        <strong id="metric-comp1-backlinks">14,200</strong>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span>Core Web Vitals Speed:</span>
+                                        <strong id="metric-comp1-speed">480ms</strong>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span>Schema.org Markup:</span>
+                                        <strong id="metric-comp1-schema"><i class="fa-solid fa-circle-xmark"></i> Missing FAQ</strong>
+                                    </div>
                                 </div>
-                                <div class="stat-row">
-                                    <span>Core Web Vitals Speed:</span>
-                                    <strong class="highlight-text-green" id="metric-us-speed">102ms</strong>
-                                </div>
-                                <div class="stat-row">
-                                    <span>Schema.org Markup:</span>
-                                    <strong class="highlight-text-green" id="metric-us-schema"><i class="fa-solid fa-circle-check"></i> Complete</strong>
+
+                                <div class="competitor-card">
+                                    <div class="badge-rank">Rank #2</div>
+                                    <h3 id="comp2-name">finance-pro.com</h3>
+                                    <p class="comp-url" id="comp2-url">https://finance-pro.com</p>
+                                    <div class="stat-row">
+                                        <span>Domain Authority:</span>
+                                        <strong id="metric-comp2-da">DA 42</strong>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span>Quality Backlinks:</span>
+                                        <strong id="metric-comp2-backlinks">3,450</strong>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span>Core Web Vitals Speed:</span>
+                                        <strong id="metric-comp2-speed">210ms</strong>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span>Schema.org Markup:</span>
+                                        <strong id="metric-comp2-schema"><i class="fa-solid fa-circle-check"></i> Complete</strong>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="competitor-card">
-                                <div class="badge-rank">Rank #1</div>
-                                <h3 id="comp1-name">taxcalculator.org</h3>
-                                <p class="comp-url" id="comp1-url">https://taxcalculator.org</p>
-                                <div class="stat-row">
-                                    <span>Domain Authority:</span>
-                                    <strong id="metric-comp1-da">DA 68</strong>
-                                </div>
-                                <div class="stat-row">
-                                    <span>Quality Backlinks:</span>
-                                    <strong id="metric-comp1-backlinks">14,200</strong>
-                                </div>
-                                <div class="stat-row">
-                                    <span>Core Web Vitals Speed:</span>
-                                    <strong id="metric-comp1-speed">480ms</strong>
-                                </div>
-                                <div class="stat-row">
-                                    <span>Schema.org Markup:</span>
-                                    <strong id="metric-comp1-schema"><i class="fa-solid fa-circle-xmark"></i> Missing FAQ</strong>
-                                </div>
-                            </div>
-
-                            <div class="competitor-card">
-                                <div class="badge-rank">Rank #2</div>
-                                <h3 id="comp2-name">finance-pro.com</h3>
-                                <p class="comp-url" id="comp2-url">https://finance-pro.com</p>
-                                <div class="stat-row">
-                                    <span>Domain Authority:</span>
-                                    <strong id="metric-comp2-da">DA 42</strong>
-                                </div>
-                                <div class="stat-row">
-                                    <span>Quality Backlinks:</span>
-                                    <strong id="metric-comp2-backlinks">3,450</strong>
-                                </div>
-                                <div class="stat-row">
-                                    <span>Core Web Vitals Speed:</span>
-                                    <strong id="metric-comp2-speed">210ms</strong>
-                                </div>
-                                <div class="stat-row">
-                                    <span>Schema.org Markup:</span>
-                                    <strong id="metric-comp2-schema"><i class="fa-solid fa-circle-check"></i> Complete</strong>
+                            <!-- Deficit / Gap Highlights -->
+                            <div class="gap-analysis-summary">
+                                <h3><i class="fa-solid fa-triangle-exclamation"></i> Identified Ranking Deficit Matrix (Gap to Rank #1)</h3>
+                                <div class="gap-grid">
+                                    <div class="gap-item-card critical">
+                                        <p class="gap-title">Backlink Authority Deficit</p>
+                                        <h4 id="gap-backlinks">-14,182 Backlinks</h4>
+                                        <p class="gap-remedy"><i class="fa-solid fa-arrow-trend-up"></i> Strategy: Deploying currency embed widgets to partner blogs to drive automated backlinks.</p>
+                                    </div>
+                                    <div class="gap-item-card optimum">
+                                        <p class="gap-title">Page Loading Speed Advantage</p>
+                                        <h4 id="gap-speed">+378ms Faster</h4>
+                                        <p class="gap-remedy"><i class="fa-solid fa-circle-check"></i> Web vitals exceed Rank #1 by 78%. Premium pure CSS implementation ensures Google Speed rank preference.</p>
+                                    </div>
+                                    <div class="gap-item-card warning">
+                                        <p class="gap-title">Schema.org Structured Data Gap</p>
+                                        <h4 id="gap-schema">We Have Advantage</h4>
+                                        <p class="gap-remedy"><i class="fa-solid fa-circle-check"></i> Bot is injecting Software & FAQ JSON-LD markup. Target competitor lacks structured search schema.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Deficit / Gap Highlights -->
-                        <div class="gap-analysis-summary">
-                            <h3><i class="fa-solid fa-triangle-exclamation"></i> Identified Ranking Deficit Matrix (Gap to Rank #1)</h3>
-                            <div class="gap-grid">
-                                <div class="gap-item-card critical">
-                                    <p class="gap-title">Backlink Authority Deficit</p>
-                                    <h4 id="gap-backlinks">-14,182 Backlinks</h4>
-                                    <p class="gap-remedy"><i class="fa-solid fa-arrow-trend-up"></i> Strategy: Deploying currency embed widgets to partner blogs to drive automated backlinks.</p>
-                                </div>
-                                <div class="gap-item-card optimum">
-                                    <p class="gap-title">Page Loading Speed Advantage</p>
-                                    <h4 id="gap-speed">+378ms Faster</h4>
-                                    <p class="gap-remedy"><i class="fa-solid fa-circle-check"></i> Web vitals exceed Rank #1 by 78%. Premium pure CSS implementation ensures Google Speed rank preference.</p>
-                                </div>
-                                <div class="gap-item-card warning">
-                                    <p class="gap-title">Schema.org Structured Data Gap</p>
-                                    <h4 id="gap-schema">We Have Advantage</h4>
-                                    <p class="gap-remedy"><i class="fa-solid fa-circle-check"></i> Bot is injecting Software & FAQ JSON-LD markup. Target competitor lacks structured search schema.</p>
-                                </div>
+                        <!-- Outreach Leads Pane -->
+                        <div class="comp-pane" id="pane-comp-leads">
+                            <p class="card-subtitle">Scraped outreach contact profiles of authority sites and rank competitors for automated PR pitching.</p>
+                            
+                            <div class="table-responsive">
+                                <table class="leads-table">
+                                    <thead>
+                                        <tr>
+                                            <th><i class="fa-solid fa-globe"></i> Domain / Page</th>
+                                            <th><i class="fa-solid fa-envelope"></i> Contact Email</th>
+                                            <th><i class="fa-solid fa-phone"></i> Phone Number</th>
+                                            <th><i class="fa-solid fa-hashtag"></i> Social Handles</th>
+                                            <th class="actions-col">Outreach Pitch</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="leads-table-body">
+                                        <tr>
+                                            <td colspan="5" class="empty-leads-msg">No outreach leads scanned yet. Run a campaign to trigger the contact details scraper.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

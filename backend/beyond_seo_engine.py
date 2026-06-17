@@ -238,6 +238,53 @@ def detect_site_tech_stack(domain, sftp_config=None, log_callback=None):
         
     return stack
 
+def run_apify_actor(actor_name, run_payload, apify_token, log_callback, task, start_progress, message_prefix="CRAWLER"):
+    """
+    Helper to trigger an Apify actor, poll for completion, and return the dataset items.
+    """
+    try:
+        actor_clean = actor_name.replace("/", "~")
+        url = f"https://api.apify.com/v2/acts/{actor_clean}/runs?token={apify_token}"
+        log_callback(progress=start_progress, task=task, 
+                     message=f"{message_prefix}: Initiating Apify Actor '{actor_name}'...", class_name="terminal-info-msg")
+        
+        run_resp = requests.post(url, json=run_payload, timeout=60)
+        run_resp.raise_for_status()
+        run_data = run_resp.json()
+        run_id = run_data["data"]["id"]
+        dataset_id = run_data["data"]["defaultDatasetId"]
+        
+        log_callback(progress=start_progress + 1, task=task, 
+                     message=f"{message_prefix}: Run {run_id} started. Polling for results...", class_name="terminal-info-msg")
+        
+        max_polls = 15
+        finished = False
+        for p in range(max_polls):
+            time.sleep(4)
+            check_url = f"https://api.apify.com/v2/actor-runs/{run_id}?token={apify_token}"
+            check_resp = requests.get(check_url, timeout=30)
+            check_resp.raise_for_status()
+            check_status = check_resp.json()["data"]["status"]
+            
+            if check_status == "SUCCEEDED":
+                finished = True
+                break
+            elif check_status in ["FAILED", "ABORTED", "TIMED-OUT"]:
+                break
+                
+        if finished:
+            dataset_url = f"https://api.apify.com/v2/datasets/{dataset_id}/items?token={apify_token}"
+            dataset_resp = requests.get(dataset_url, timeout=30)
+            dataset_resp.raise_for_status()
+            return dataset_resp.json()
+        else:
+            log_callback(progress=start_progress + 2, task=task, 
+                         message=f"WARNING: Apify Actor '{actor_name}' run did not complete (status: {check_status}).", class_name="terminal-warning-msg")
+    except Exception as e:
+        log_callback(progress=start_progress + 2, task=task, 
+                     message=f"WARNING: Failed to run Apify Actor '{actor_name}': {str(e)}", class_name="terminal-warning-msg")
+    return None
+
 def run_campaign_pipeline(config, log_callback):
     """
     Executes the 6-phase SEO autopilot pipeline.
@@ -329,79 +376,89 @@ def run_campaign_pipeline(config, log_callback):
         
         # Real Apify integration if token provided
         apify_success = False
+        competitor_content_context = ""
         if apify_token:
-            try:
-                log_callback(progress=28, task="keywords", 
-                             message="CRAWLER: Initiating Apify Actor 'apify/google-search-scraper'...", class_name="terminal-info-msg")
-                
-                # Execute Google Search scraper actor on Apify
-                apify_url = f"https://api.apify.com/v2/acts/apify~google-search-scraper/runs?token={apify_token}"
-                run_payload = {
-                    "queries": keyword,
-                    "maxPagesPerQuery": 1,
-                    "resultsPerPage": 10,
-                    "countryCode": "us",
-                    "languageCode": "en"
-                }
-                run_resp = requests.post(apify_url, json=run_payload, timeout=60)
-                run_resp.raise_for_status()
-                run_data = run_resp.json()
-                run_id = run_data["data"]["id"]
-                dataset_id = run_data["data"]["defaultDatasetId"]
-                
-                log_callback(progress=30, task="keywords", 
-                             message=f"CRAWLER: Scraper run {run_id} started on Apify. Polling for results...", class_name="terminal-info-msg")
-                
-                # Poll for completion
-                max_polls = 12
-                finished = False
-                for p in range(max_polls):
-                    time.sleep(4)
-                    check_url = f"https://api.apify.com/v2/actor-runs/{run_id}?token={apify_token}"
-                    check_resp = requests.get(check_url, timeout=30)
-                    check_resp.raise_for_status()
-                    check_status = check_resp.json()["data"]["status"]
-                    
-                    if check_status == "SUCCEEDED":
-                        finished = True
-                        break
-                    elif check_status in ["FAILED", "ABORTED", "TIMED-OUT"]:
-                        break
-                
-                if finished:
-                    dataset_url = f"https://api.apify.com/v2/datasets/{dataset_id}/items?token={apify_token}"
-                    dataset_resp = requests.get(dataset_url, timeout=30)
-                    dataset_resp.raise_for_status()
-                    results = dataset_resp.json()
-                    
-                    # Try to extract the first two organic results as competitors
-                    organic_results = []
-                    if results and isinstance(results, list):
-                        organic_results = results[0].get("organicResults", [])
-                    
+            # Run Google search scraper
+            serp_payload = {
+                "queries": keyword,
+                "maxPagesPerQuery": 1,
+                "resultsPerPage": 10,
+                "countryCode": "us",
+                "languageCode": "en"
+            }
+            results = run_apify_actor(
+                "apify/google-search-scraper",
+                serp_payload,
+                apify_token,
+                log_callback,
+                "keywords",
+                28,
+                message_prefix="SERP_SCRAPER"
+            )
+            if results and isinstance(results, list) and len(results) > 0:
+                try:
+                    organic_results = results[0].get("organicResults", [])
                     if organic_results and len(organic_results) >= 2:
                         competitors["comp1_url"] = organic_results[0].get("url")
                         competitors["comp1_name"] = organic_results[0].get("title", competitors["comp1_name"])
                         competitors["comp2_url"] = organic_results[1].get("url")
                         competitors["comp2_name"] = organic_results[1].get("title", competitors["comp2_name"])
                         apify_success = True
-                        log_callback(progress=35, task="keywords", 
+                        log_callback(progress=33, task="keywords", 
                                      message=f"CRAWLER: Apify SERP scraper success! Identified Rank #1: {competitors['comp1_url']} and Rank #2: {competitors['comp2_url']}", 
                                      class_name="terminal-success-msg",
                                      comp1_name=competitors["comp1_name"],
                                      comp1_url=competitors["comp1_url"],
                                      comp2_name=competitors["comp2_name"],
                                      comp2_url=competitors["comp2_url"])
-            except Exception as e:
-                log_callback(progress=32, task="keywords", 
-                             message=f"WARNING: Apify actor run failed ({str(e)}). Falling back to mock competitor profile.", class_name="terminal-warning-msg")
+                except Exception as e:
+                    log_callback(progress=33, task="keywords", 
+                                 message=f"WARNING: Failed to parse SERP results: {str(e)}", class_name="terminal-warning-msg")
+            
+            # Now trigger Website Content Crawler for Rank #1 competitor
+            if competitors.get("comp1_url"):
+                crawler_payload = {
+                    "startUrls": [{"url": competitors["comp1_url"]}],
+                    "maxCrawlingDepth": 1,
+                    "maxPagesPerCrawl": 2,
+                    "crawlerType": "cheerio"
+                }
+                crawler_results = run_apify_actor(
+                    "apify/website-content-crawler",
+                    crawler_payload,
+                    apify_token,
+                    log_callback,
+                    "keywords",
+                    34,
+                    message_prefix="COMPETITOR_CRAWLER"
+                )
+                if crawler_results and isinstance(crawler_results, list) and len(crawler_results) > 0:
+                    try:
+                        comp_page = crawler_results[0]
+                        text_content = comp_page.get("text", "") or comp_page.get("markdown", "")
+                        competitor_content_context = text_content[:2000]
+                        log_callback(progress=37, task="keywords", 
+                                     message=f"COMPETITOR_CRAWLER: Scraped content context from Rank #1 competitor: {len(competitor_content_context)} chars.", 
+                                     class_name="terminal-success-msg")
+                    except Exception as e:
+                        log_callback(progress=37, task="keywords", 
+                                     message=f"WARNING: Failed to parse crawled competitor page: {str(e)}", class_name="terminal-warning-msg")
         else:
             time.sleep(1.5)
             log_callback(progress=30, task="keywords", 
                          message=f"BOT: No Apify API token configured. Using localized competitor intelligence profiles.", class_name="terminal-info-msg")
             time.sleep(1.0)
+
+        if not competitor_content_context:
+            competitor_content_context = (
+                f"Competitor site: {competitors['comp1_url']}\n"
+                f"Focuses heavily on {keyword}. Clean layout with an interactive calculation form. "
+                "Highlights key tax brackets, quick estimations, and standard deductions. "
+                "Structure includes a landing page hero section, calculation parameters panel, "
+                "step-by-step breakdown text, and direct CTA buttons for tax consulting."
+            )
             
-        log_callback(progress=35, task="keywords", 
+        log_callback(progress=38, task="keywords", 
                      message=f"BOT: Competitor deficit calculated. Backlink Authority Gap: -14k links. Structured Data Gap: Missing schema.org markup.", 
                      class_name="terminal-info-msg",
                      comp1_name=competitors["comp1_name"],
@@ -457,6 +514,12 @@ def run_campaign_pipeline(config, log_callback):
 Write a single, self-contained landing page HTML code block optimized for keyword: "{keyword}".
 The target domain is: "{domain}".
 Customize the style and tone using the following instructions: "{custom_instructions}".
+
+Here is the layout and text content context scraped from the top competitor ({competitors["comp1_url"]}):
+---
+{competitor_content_context}
+---
+Analyze their structure and semantic vocabulary to produce an even better page that addresses the same search intent but is more comprehensive, has higher conversion appeal, and uses the "Obsidian Slate Dark" glassmorphic design system.
 
 Use these playbooks as your core rules:
 ---
@@ -844,8 +907,102 @@ CRITICAL REQUIREMENTS:
             log_callback(progress=98, task="offpage", 
                          message=f"WARNING: Playwright posting process failed: {str(pe)}. Using fallback links.", class_name="terminal-warning-msg", backlinks_count=0)
         
+        # OFFPAGE leads extraction
+        scraped_leads = []
+        if apify_token:
+            log_callback(progress=96, task="offpage", 
+                         message="OFFPAGE: Launching outreach contact details scraper on competitor domains...", class_name="terminal-action-msg", backlinks_count=backlinks_built)
+            
+            lead_urls = []
+            if competitors.get("comp1_url"):
+                lead_urls.append({"url": competitors["comp1_url"]})
+            if competitors.get("comp2_url"):
+                lead_urls.append({"url": competitors["comp2_url"]})
+                
+            if lead_urls:
+                contact_payload = {
+                    "startUrls": lead_urls,
+                    "maxRequestsPerStartUrl": 5,
+                    "maxDepth": 1,
+                    "maxRequests": 10,
+                    "mergeContacts": True
+                }
+                contact_results = run_apify_actor(
+                    "vdrmota/contact-info-scraper",
+                    contact_payload,
+                    apify_token,
+                    log_callback,
+                    "offpage",
+                    96,
+                    message_prefix="CONTACT_SCRAPER"
+                )
+                if contact_results and isinstance(contact_results, list):
+                    for item in contact_results:
+                        url = item.get("url") or item.get("startUrl")
+                        emails = item.get("emails", [])
+                        phones = item.get("phones", [])
+                        
+                        email = emails[0] if emails and isinstance(emails, list) else (emails or "")
+                        phone = phones[0] if phones and isinstance(phones, list) else (phones or "")
+                        
+                        linkedin = ""
+                        twitter = ""
+                        social = item.get("socialMedia", {}) or {}
+                        if isinstance(social, dict):
+                            linkedins = social.get("linkedIn", []) or social.get("linkedin", [])
+                            twitters = social.get("twitter", [])
+                            linkedin = linkedins[0] if linkedins and isinstance(linkedins, list) else (linkedins or "")
+                            twitter = twitters[0] if twitters and isinstance(twitters, list) else (twitters or "")
+                        
+                        if not linkedin:
+                            linkedins = item.get("linkedIns", []) or item.get("linkedin", [])
+                            linkedin = linkedins[0] if linkedins and isinstance(linkedins, list) else (linkedins or "")
+                        if not twitter:
+                            twitters = item.get("twitters", []) or item.get("twitter", [])
+                            twitter = twitters[0] if twitters and isinstance(twitters, list) else (twitters or "")
+
+                        lead_record = {
+                            "domain": url,
+                            "email": email,
+                            "phone": phone,
+                            "linkedin": linkedin,
+                            "twitter": twitter
+                        }
+                        if email or linkedin or twitter:
+                            scraped_leads.append(lead_record)
+                            
+                    log_callback(progress=98, task="offpage", 
+                                 message=f"CONTACT_SCRAPER: Found {len(scraped_leads)} contact leads from competitor domains.", 
+                                 class_name="terminal-success-msg",
+                                 backlinks_count=backlinks_built,
+                                 scraped_leads=json.dumps(scraped_leads))
+        else:
+            time.sleep(1.0)
+            # Create high-quality mock outreach leads
+            scraped_leads = [
+                {
+                    "domain": competitors.get("comp1_url", "https://competitor1.com"),
+                    "email": f"contact@{competitors.get('comp1_name', 'competitor1').replace(' ', '').replace('.','').lower()}.com" if "http" not in competitors.get('comp1_name', '') else "contact@competitor1.com",
+                    "phone": "+1-555-0199",
+                    "linkedin": "https://linkedin.com/company/competitor-one",
+                    "twitter": "https://twitter.com/competitor_one"
+                },
+                {
+                    "domain": competitors.get("comp2_url", "https://competitor2.com"),
+                    "email": f"info@{competitors.get('comp2_name', 'competitor2').replace(' ', '').replace('.','').lower()}.com" if "http" not in competitors.get('comp2_name', '') else "info@competitor2.com",
+                    "phone": "+1-555-0244",
+                    "linkedin": "https://linkedin.com/company/competitor-two",
+                    "twitter": "https://twitter.com/competitor_two"
+                }
+            ]
+            log_callback(progress=98, task="offpage", 
+                         message=f"CONTACT_SCRAPER: (Mock Mode) Generated {len(scraped_leads)} outreach leads.", 
+                         class_name="terminal-success-msg",
+                         backlinks_count=backlinks_built,
+                         scraped_leads=json.dumps(scraped_leads))
+        
         log_callback(progress=100, task="offpage", taskStatus="completed", 
-                     message=f"CAMPAIGN SUCCESS: Autopilot has successfully indexed, written, and deployed organic ranking pages with {backlinks_built} backlinks built.", class_name="terminal-success-msg", backlinks_count=backlinks_built)
+                     message=f"CAMPAIGN SUCCESS: Autopilot has successfully indexed, written, and deployed organic ranking pages with {backlinks_built} backlinks built.", class_name="terminal-success-msg", backlinks_count=backlinks_built, scraped_leads=json.dumps(scraped_leads))
         
         return True, "Campaign succeeded"
         

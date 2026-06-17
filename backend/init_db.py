@@ -25,7 +25,8 @@ def init_db():
             artifact_html TEXT,
             backlinks_count INTEGER DEFAULT 0,
             tech_stack TEXT DEFAULT 'unknown',
-            audit_only INTEGER DEFAULT 0
+            audit_only INTEGER DEFAULT 0,
+            scraped_leads TEXT DEFAULT '[]'
         )
     ''')
     
